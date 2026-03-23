@@ -520,9 +520,15 @@ def generate_driver(p: Panel, options: Options) -> None:
 		options.gpios["backlight"] = GpioFlag.ACTIVE_HIGH
 
 	dash_id = p.short_id.replace('_', '-')
-	compatible = dash_id.split('-', 1)
 
-	# Try to guess if short id starts with vendor name (e.g. booyi)
+	for a in range(len(dash_id.split("-"))-1):
+		compatible = dash_id.split('-', a+1)
+		if compatible[a] != "panel":
+			for b in range(a):
+				compatible.__delitem__(b)
+			break
+
+	# Try to guess if short id starts with vendor name
 	if compatible[0].isalpha():
 		compatible = ','.join(compatible)
 	else:

@@ -279,11 +279,6 @@ class Panel:
 		if self.cmds['on'].state == CommandSequence.State.LP_MODE == self.cmds['off'].state:
 			self.flags.append('MIPI_DSI_MODE_LPM')
 
-		if self.bpp == 24:
-			self.format = 'MIPI_DSI_FMT_RGB888'
-		else:
-			raise ValueError(f'Unsupported bpp: {self.bpp} (TODO)')
-
 		# Sony </3
 		prop = fdt.getprop_or_none(node, 'somc,mdss-phy-size-mm')
 		if prop:
@@ -328,6 +323,11 @@ class Panel:
 
 			self.dsc_version = fdt.getprop_uint32(mode_node, 'qcom,mdss-dsc-version', default=0x11)
 			self.dsc_scr_version = fdt.getprop_uint32(mode_node, 'qcom,mdss-dsc-scr-version', default=0)
+
+		if self.bpp == 24 or self.bpp == 30 and self.compression_mode == CompressionMode.DSC:
+			self.format = 'MIPI_DSI_FMT_RGB888'
+		else:
+			raise ValueError(f'Unsupported bpp: {self.bpp} (TODO)')
 
 	@staticmethod
 	def parse(fdt: Fdt2, node: int) -> Panel:
