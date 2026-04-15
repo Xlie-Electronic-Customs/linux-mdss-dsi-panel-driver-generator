@@ -164,6 +164,23 @@ static int {p.short_id}_{cmd_name}(struct {p.short_id} *ctx)
 '''
 	return s
 
+def generate_dsi_commands(p: Panel, options: Options, cmd_name: str) -> str:
+	cmd = p.cmds[cmd_name]
+
+	s = ''
+
+	block = True
+	for c in cmd.seq:
+		if block or '{' in c.generated:
+			s += '\n'
+		block = '{' in c.generated
+
+		s += c.generated + '\n'
+		if c.wait and c.wait > options.ignore_wait:
+			s += f'\t{dsi_msleep(c.wait)};\n'
+
+	return s
+
 
 def generate_cleanup(p: Panel, options: Options, indent: int = 1) -> str:
 	cleanup = []
@@ -227,6 +244,7 @@ static int {p.short_id}_prepare(struct drm_panel *panel)
 		return ret;
 	}}
 '''
+	s += f'{generate_dsi_commands(p, options, 'timing-switch')}'
 
 	if p.compression_mode == CompressionMode.DSC:
 		s += '''

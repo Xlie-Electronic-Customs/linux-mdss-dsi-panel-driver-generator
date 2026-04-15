@@ -295,12 +295,13 @@ class Panel:
 			self.reset_seq = None
 
 		self.cmds = {
+			'timing-switch': CommandSequence(fdt, mode_node, 'timing-switch'),
 			'on': CommandSequence(fdt, mode_node, 'on'),
 			'off': CommandSequence(fdt, mode_node, 'off')
 		}
 
 		# If all commands are sent in LPM, add flag globally
-		if self.cmds['on'].state == CommandSequence.State.LP_MODE == self.cmds['off'].state:
+		if self.cmds['timing-switch'].state == self.cmds['on'].state == CommandSequence.State.LP_MODE == self.cmds['off'].state:
 			self.flags.append('MIPI_DSI_MODE_LPM')
 
 		# Sony </3
