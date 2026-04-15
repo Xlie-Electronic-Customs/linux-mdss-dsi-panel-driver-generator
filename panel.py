@@ -8,6 +8,8 @@ from typing import Iterator, List, Optional
 
 import libfdt
 
+from libfdt import  FdtException
+
 import mipi
 from fdt2 import Fdt2
 
@@ -96,6 +98,7 @@ class BacklightControl(Enum):
 	DCS = 'bl_ctrl_dcs'
 	WLED = 'bl_ctrl_wled'
 	SAMSUNG_PWM = 'bl_ctrl_ss_pwm'
+	EXTERNAL = "bl_ctrl_external"
 
 
 @unique
@@ -142,7 +145,17 @@ class CommandSequence:
 		HS_MODE = 'dsi_hs_mode'
 
 	def __init__(self, fdt: Fdt2, node: int, cmd: str) -> None:
-		self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-{cmd}-command-state').as_str())
+
+		try:
+			self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-{cmd}-command-state').as_str())
+		except FdtException:
+			if cmd == 'on':
+				cmd = 'loading-effect-1'
+			elif cmd == 'off':
+				cmd = 'loading-effect-off'
+			self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-{cmd}-command-state').as_str())
+
+
 		self.seq = []
 
 		prop = fdt.getprop_or_none(node, f'qcom,mdss-dsi-{cmd}-command')
@@ -293,8 +306,12 @@ class Panel:
 		self.ldo_mode = False
 		dsi_ctrl = fdt.getprop_or_none(node, 'qcom,mdss-dsi-panel-controller')
 		if dsi_ctrl is not None:
-			dsi_ctrl = fdt.node_offset_by_phandle(dsi_ctrl.as_uint32())
-			self.ldo_mode = fdt.getprop_or_none(dsi_ctrl, 'qcom,regulator-ldo-mode') is not None
+			try:
+				dsi_ctrl = fdt.node_offset_by_phandle(dsi_ctrl.as_uint32())
+				self.ldo_mode = fdt.getprop_or_none(dsi_ctrl, 'qcom,regulator-ldo-mode') is not None
+
+			except:
+				dsi_ctrl = None
 
 		# Timings are usually calculated by the driver except for downstream and LK
 		p = fdt.getprop_or_none(node, 'qcom,mdss-dsi-panel-timings')
@@ -359,3 +376,24 @@ class Panel:
 
 		for phandle in panel_phandles:
 			yield fdt.node_offset_by_phandle(phandle)
+
+		# --- 3. overlay (__fixups__) ---
+		try:
+			fixups_off = fdt.path_offset("/__fixups__")
+		except:
+			return
+
+		for symbol in ["mdss_dsi0", "mdss_dsi1"]:
+			try:
+				prop = fdt.getprop(fixups_off, symbol)
+			except:
+				continue
+
+			for entry in prop.as_stringlist():
+				node_path = entry.split(":")[0]
+
+				try:
+					node_off = fdt.path_offset(node_path)
+					yield node_off
+				except:
+					continue
