@@ -148,12 +148,12 @@ class CommandSequence:
 
 		try:
 			self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-{cmd}-command-state').as_str())
-		except FdtException:
+		except:
 			if cmd == 'on':
-				cmd = 'loading-effect-1'
+				state = 'loading-effect-1'
 			elif cmd == 'off':
-				cmd = 'loading-effect-off'
-			self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-{cmd}-command-state').as_str())
+				state = 'loading-effect-off'
+			self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-{state}-command-state').as_str())
 
 
 		self.seq = []
@@ -162,7 +162,18 @@ class CommandSequence:
 		if prop is None:
 			print(f'Warning: qcom,mdss-dsi-{cmd}-command does not exist')
 			return  # No commands
-		itr = iter(prop)
+
+		if cmd == 'off':
+			prop_effect = fdt.getprop_or_none(node, f'qcom,mdss-dsi-loading-effect-off-command')
+			if prop_effect is None:
+				print(f'Warning: qcom,mdss-dsi-loading-effect-off-command')
+				itr = iter(prop)
+
+			else:
+				itr = iter(prop+prop_effect)
+
+		else:
+			itr = iter(prop)
 
 		if cmd == 'on':
 			# WHY SONY/LG, WHY?????? Just put it in on-command...

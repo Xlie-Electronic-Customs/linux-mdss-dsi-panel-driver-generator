@@ -31,8 +31,18 @@ class Fdt2(FdtRo):
 		try:
 			return super().getprop(nodeoffset, prop_name, quiet)
 		except:
-			print(f"ERROR: Failed to get property: {prop_name}")
-			raise
+			if prop_name == 'qcom,mdss-dsi-on-command':
+				try:
+					return super().getprop(nodeoffset, 'qcom,mdss-dsi-loading-effect-1-command', quiet)
+				except:
+					print(f"ERROR: Failed to get property: {prop_name}")
+					raise
+			elif prop_name == 'qcom,mdss-dsi-off-command':
+				try:
+					return super().getprop(nodeoffset, 'qcom,mdss-dsi-loading-effect-off-command', quiet)
+				except:
+					print(f"ERROR: Failed to get property: {prop_name}")
+					raise
 
 	def getprop_or_none(self, nodeoffset, prop_name):
 		prop = self.getprop(nodeoffset, prop_name, [FDT_ERR_NOTFOUND])
