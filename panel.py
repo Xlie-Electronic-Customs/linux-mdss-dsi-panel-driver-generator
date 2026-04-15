@@ -150,10 +150,11 @@ class CommandSequence:
 			self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-{cmd}-command-state').as_str())
 		except:
 			if cmd == 'on':
-				state = 'loading-effect-1'
+				self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-loading-effect-1-command-state').as_str())
 			elif cmd == 'off':
-				state = 'loading-effect-off'
-			self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-{state}-command-state').as_str())
+				self.state = CommandSequence.State(fdt.getprop(node, f'qcom,mdss-dsi-loading-effect-off-command-state').as_str())
+
+
 
 
 		self.seq = []
@@ -262,6 +263,8 @@ class Panel:
 			print("WARNING: DCS backlight without maximum brightness, ignoring...")
 			self.backlight = None
 
+		self.brightness = fdt.getprop_uint32(node, 'oplus,dsi-brightness-default-level', self.max_brightness)
+
 		self.lanes = 0
 		while fdt.getprop_or_none(node, f'qcom,mdss-dsi-lane-{self.lanes}-state') is not None:
 			self.lanes += 1
@@ -301,7 +304,7 @@ class Panel:
 		}
 
 		# If all commands are sent in LPM, add flag globally
-		if self.cmds['timing-switch'].state == self.cmds['on'].state == CommandSequence.State.LP_MODE == self.cmds['off'].state:
+		if self.cmds['on'].state == CommandSequence.State.LP_MODE == self.cmds['off'].state:
 			self.flags.append('MIPI_DSI_MODE_LPM')
 
 		# Sony </3
