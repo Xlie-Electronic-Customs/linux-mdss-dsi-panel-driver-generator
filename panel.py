@@ -359,7 +359,7 @@ class Panel:
 		if self.bpp == 24 or self.bpp == 30 and self.compression_mode == CompressionMode.DSC:
 			self.format = 'MIPI_DSI_FMT_RGB888'
 		else:
-			raise ValueError(f'Unsupported bpp: {self.bpp} (TODO)')
+			self.format = 'MIPI_DSI_FMT_RGB101010'
 
 	@staticmethod
 	def parse(fdt: Fdt2, node: int) -> Panel:
